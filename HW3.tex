@@ -1,0 +1,186 @@
+\documentclass{article}
+
+\usepackage{graphicx}%
+\usepackage{subcaption}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+\usepackage{bm}%
+\usepackage[normalem]{ulem}  % for \sout
+\usepackage{float}
+\usepackage{placeins}  % For \FloatBarrier
+\usepackage[
+colorlinks=true,
+linkcolor=blue,
+citecolor=red,
+urlcolor=magenta
+]{hyperref}
+\usepackage{geometry}
+\geometry{
+  left=15mm,
+  right=15mm,
+  top=10mm,
+  bottom=10mm
+}
+\usepackage{onimage}
+
+%%%% 
+
+%% as per the requirement new theorem styles can be included as shown below
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}%
+\newtheorem{proposition}[theorem]{Proposition}%
+
+\theoremstyle{remark} %
+\newtheorem{example}{Example}%
+\newtheorem{remark}{Remark}%
+
+\theoremstyle{definition} % <--- 修改这里 (定义用 definition 样式)
+\newtheorem{definition}{Definition}%
+
+\newcommand{\ip}[2]{\left\langle #1, #2 \right\rangle}
+\newcommand{\U}{\mathcal U}
+\newcommand{\cwrremark}[1]{\textcolor{blue}{[CWR: #1]}}
+\newcommand{\ysremark}[1]{\textcolor{red}{[YS: #1]}}
+\newcommand{\solidline}{\rule[0.5ex]{1.5em}{0.6pt}}
+\newcommand{\dashedline}{\makebox[1.5em][l]{\rule[0.5ex]{0.3em}{0.6pt}\hspace{0.2em}%
+    \rule[0.5ex]{0.3em}{0.6pt}\hspace{0.2em}%
+    \rule[0.5ex]{0.3em}{0.6pt}}}
+
+\raggedbottom
+%% \unnumbered% uncomment this for unnumbered level heads
+
+\begin{document}
+
+\title{MAE 557 Mini-Project Three}
+
+\author{Yu Shuai}
+
+\maketitle
+
+\section{Choice of the pressure correction approach}
+\label{sec:pressure_correction_approach}
+
+The non-dimensionalized governing equations of the two-dimensional incompressible lid-driven cavity flow are given as follows:
+
+\begin{subequations}
+  \label{eq:1}
+  \begin{align}
+    \label{eq:1a}
+    \frac{\partial u_i}{\partial t} + \frac{\partial (u_ju_i)}{\partial x_j} &= -\frac{\partial p}{\partial x_i} + \frac{1}{\mathrm{Re}}\frac{\partial}{\partial x_j}\bigg(\frac{\partial u_i}{\partial x_j}\bigg),\\
+    \label{eq:1b}
+    \frac{\partial u_i}{\partial x_i} &= 0.\\
+    \label{eq:1c}
+    u_{\perp} &= 0, \qquad \mbox{at walls}.\\
+    \label{eq:1d}
+    u_{\parallel} &= 0, \qquad \mbox{at the left, right, and bottom wall}.\\
+    \label{eq:1e}
+    u_{\parallel} &= u_{\text{wall}} = \sin\bigg(\frac{2t}{\mathrm{Re}}\bigg), \qquad \mbox{at the top wall}.              
+    \end{align}
+  \end{subequations}
+Here, we use $u_{\perp}$ and $u_{\parallel}$ to represent the normal and the tangential component of velocity at walls.
+The relations between the dimensional variables (written in capital letters) and their dimensionless counterparts are shown as follows:
+\begin{subequations}
+  \label{eq:2}
+  \begin{align}
+    \label{eq:2a}
+    x_i &= X_i / L,\\
+    \label{eq:2b}
+    u_i &= U_i/U_W,\\
+    \label{eq:2c}
+    t   &= T/(L/U_W) = U_WT/L,\\
+    \label{eq:2d}
+    p   &= (p - p_0)/(\rho_0U_W^2), \quad p_0 = 1~\mathrm{bar}, \quad \rho_0 = p_0/(RT_0), \quad T_0 = 300~\mathrm{K},\\
+    \label{eq:2e}
+    U_{\text{wall}} &= U_W\sin(\omega T) \Longrightarrow u_{\text{wall}} = \sin\bigg(\frac{\omega L}{U_W}t\bigg) = \sin\bigg(\frac{\omega L^2}{2\nu}\cdot\frac{\nu}{U_WL}\cdot 2t\bigg) = \sin\bigg(\frac{2t}{\mathrm{Re}}\bigg). 
+    \end{align}
+  \end{subequations}
+  and the Reynolds number is defined as $\mathrm{Re} = U_WL/\nu$.
+
+The pressure-correction algorithm we choose is the \textcolor{blue}{Chorin's projection method} as shown below (here we choose the backward Euler timestepper):
+\begin{subequations}
+  \label{eq:3}
+  \begin{align}
+    \label{eq:3a}
+    \frac{u^*_i - u^n_i}{\Delta t} &= -\frac{\partial (u_j^*u_i^*)}{\partial x_j} + \frac{1}{\mathrm{Re}}\frac{\partial}{\partial x_j}\bigg(\frac{\partial u_i}{\partial x_j}\bigg),\\
+    \label{eq:3b}
+    \frac{u^{n+1}_i - u^*_i}{\Delta t} &= -\frac{\partial (p^{n+1}/\rho)}{\partial x_i},\\
+    \label{eq:3c}
+    \frac{\partial}{\partial x_j}\bigg(\frac{\partial (p^{n+1}/\rho)}{\partial x_j}\bigg) &= \frac{1}{\Delta t}\frac{\partial u_j^*}{\partial x_j}.
+    \end{align}
+  \end{subequations}
+
+  By utilizing this algorithm, we can ensure the solutions $u^n_i$ satisfy the divergence-free condition.
+Additionally, this method is easy to implement with a first-order accuracy in time.
+
+\section{Choice of the finite volume operators}
+\label{sec:finite_volume_operators}
+
+Consider a uniform collocated structured grid with $N_{x_1}\times N_{x_2}$ rectangular cells, each with size $\Delta {x_1} \times \Delta {x_2} = (1/N_{x_1}) \times (1/N_{x_2})$.
+For a single cell, we denote its center to be point $P$ and its faces to be $(e, w, c, s)$.
+The centers of neighboring cells are then denoted as $(E, W, C, S)$.
+We now rewrite the governing equations of Chorin's method in the integral form using a second-order finite-volume-method discretization.
+
+\begin{subequations}
+  \label{eq:4}
+  \begin{align}
+    \label{eq:4a}
+    \int_V \frac{u^*_i - u^n_i}{\Delta t} \mathrm{d}V &= \int_V - \frac{\partial (u_j^*u_i^*)}{\partial x_j} + \frac{1}{\mathrm{Re}}\frac{\partial}{\partial x_j}\bigg(\frac{\partial u_i^*}{\partial x_j}\bigg) \mathrm{d}V\notag\\
+    \Longrightarrow \Delta x\Delta x_2\frac{(u^*_i)_P - (u^n_i)_P}{\Delta t} &= -((u_{\perp}^*)_e(u_i^*)_e + (u_{\perp}^*)_w(u_i^*)_w)\Delta y - ((u_{\perp}^*)_n(u_i^*)_n + (u_{\perp}^*)_s(u_i^*)_s)\Delta x_1 \notag\\
+                                                        & + \frac{1}{\mathrm{Re}}\Bigg(\bigg(\frac{\partial u_i^*}{\partial x_1}\bigg)_e - \bigg(\frac{\partial u_i^*}{\partial x_1}\bigg)_w\Bigg)\Delta x_2 + \frac{1}{\mathrm{Re}}\Bigg(\bigg(\frac{\partial u_i^*}{\partial x_2}\bigg)_n - \bigg(\frac{\partial u_i^*}{\partial x_2}\bigg)_s\Bigg)\Delta x_1 \notag\\
+    \Longrightarrow \Delta x_1\Delta x_2\frac{(u^*_1)_P - (u^n_1)_P}{\Delta t} &= -((u_1^*)_e^2 - (u_1^*)_w^2)\Delta x_2 - ((u_2^*u_1^*)_n - (u_2^*u_1^*)_s)\Delta x_1 \notag\\
+                                                       & + \frac{1}{\mathrm{Re}}\Bigg(\bigg(\frac{\partial u_1^*}{\partial x_1}\bigg)_e - \bigg(\frac{\partial u_1^*}{\partial x_1}\bigg)_w\Bigg)\Delta x_2 + \frac{1}{\mathrm{Re}}\Bigg(\bigg(\frac{\partial u_1^*}{\partial x_2}\bigg)_n - \bigg(\frac{\partial u_1^*}{\partial x_2}\bigg)_s\Bigg)\Delta x_1; \notag\\
+    \Delta x_1\Delta x_2\frac{(u^*_2)_P - (u^n_2)_P}{\Delta t} &= -((u_1^*u_2^*)_e - (u_1^*u_2^*)_w)\Delta x_2 - ((u_2^*)_n^2 - (u_2^*)_s^2)\Delta x_1 \notag\\
+                                                      & + \frac{1}{\mathrm{Re}}\Bigg(\bigg(\frac{\partial u_2^*}{\partial x_1}\bigg)_e - \bigg(\frac{\partial u_2^*}{\partial x_1}\bigg)_w\Bigg)\Delta x_2 + \frac{1}{\mathrm{Re}}\Bigg(\bigg(\frac{\partial u_2^*}{\partial x_2}\bigg)_n - \bigg(\frac{\partial u_2^*}{\partial x_2}\bigg)_s\Bigg)\Delta x_1,\\
+    \newline\\
+    \label{eq:4b}
+    \int_V \frac{u^{n+1}_i - u^*_i}{\Delta t} \mathrm{d}V &= \int_V-\frac{\partial (p^{n+1}/\rho)}{\partial x_i} \mathrm{d}V \notag\\
+    \Longrightarrow \Delta x_1\Delta x_2\frac{(u^{n+1}_1)_P - (u^*_1)_P}{\Delta t} &= -\frac{1}{\rho}(p_e^{n+1} - p_w^{n+1})\Delta x_2;\notag\\
+    \Delta x_1\Delta x_2\frac{(u^{n+1}_2)_P - (u^*_2)_P}{\Delta t} &= -\frac{1}{\rho}(p_n^{n+1} - p_s^{n+1})\Delta x_1, \\
+    \newline\\
+    \label{eq:4c}
+    \int_V \frac{\partial}{\partial x_j}\bigg(\frac{\partial (p^{n+1}/\rho)}{\partial x_j}\bigg) \mathrm{d}V &= \frac{1}{\Delta t}\int_V \frac{\partial u_j^*}{\partial x_j} \mathrm{d}V \notag\\
+    \Longrightarrow \Bigg(\bigg(\frac{\partial p^{n+1}}{\partial x_1}\bigg)_e - \bigg(\frac{\partial p^{n+1}}{\partial x_1}\bigg)_w\Bigg)\Delta x_2 & + \Bigg(\bigg(\frac{\partial p^{n+1}}{\partial x_2}\bigg)_n - \bigg(\frac{\partial p^{n+1}}{\partial x_2}\bigg)_s\Bigg)\Delta x_1 \notag\\
+                                                      &= \frac{\rho}{\Delta t}\Bigg(\bigg((u_1^*)_e - (u_1^*)_w\bigg)\Delta x_2 + \bigg((u_2^*)_n - (u_2^*)_s\bigg)\Delta x_1\Bigg).
+  \end{align}
+\end{subequations}
+
+To obtain a second-order spatial accuracy, we evaluate quantities on cell surfaces using centered differencing and linear interpolation:
+\begin{subequations}
+  \label{eq:5}
+  \begin{align}
+    \label{eq:5a}
+    (u_1^*)_e &= \frac{(u_1^*)_P + (u_1^*)_E}{2} \qquad \mbox{(similar idea for other variables at other surfaces)}, \\
+    \label{eq:5b}
+    \bigg(\frac{\partial u_1^*}{\partial x_1}\bigg)_e &= \frac{(u_1^*)_E - (u_1^*)_P}{\Delta x_1} \qquad \mbox{(similar idea for other velocity gradients at other surfaces)}, \\
+    \label{eq:5c}
+    \bigg(\frac{\partial p^{n+1}}{\partial x_1}\bigg)_e &= \frac{1}{2}\bigg(\frac{\partial p^{n+1}}{\partial x_1}\bigg)_P + \frac{1}{2}\bigg(\frac{\partial p^{n+1}}{\partial x_1}\bigg)_E \notag\\
+    &= \frac{1}{2}\frac{p^{n+1}_E - p^{n+1}_W}{2\Delta x_1} + \frac{1}{2}\frac{p^{n+1}_{EE} - p^{n+1}_P}{2\Delta x_1}\qquad \mbox{(similar idea for the pressure gradients at other surfaces)}.
+  \end{align}
+\end{subequations}
+where we adopt two different approaches to compute the gradients of velocity and pressure on cell surfaces, respectively.
+
+Finally, we evaluate the divergence of velocity field using the following formula:
+\begin{align}
+  \label{eq:6}
+  dfd
+  \end{align}
+
+
+\textcolor{blue}{With the chosen pressure discretization scheme, we can ensure that the discretized Laplacian operator in the pressure Poisson equation equals to the discretized divergence of the discretized gradient, thereby enforcing the divergence-free condition rigorously everywhere in our computational domain.}
+\textcolor{red}{The only issue is that with a 9-point broad stencil for our Laplacian operator, the pressure field will potentially exhibit the so-called ``Checkerboard pattern''.
+  Nevertheless, this pattern is not guaranteed to emerge, so we just choose to be blind over this issue rather than introducing additional methods to address this problem, e.g. the Rhie-Chow interpolation.}
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
